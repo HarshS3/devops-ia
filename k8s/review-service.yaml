@@ -14,7 +14,7 @@ spec:
       containers:
       - name: review-service
         image: review-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002
         env:
