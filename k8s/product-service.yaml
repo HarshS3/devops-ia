@@ -15,8 +15,6 @@ spec:
       - name: product-service
         image: 559007813412.dkr.ecr.us-east-1.amazonaws.com/ecommerce/product-service:latest
         imagePullPolicy: IfNotPresent
-        securityContext:
-          privileged: true
         ports:
         - containerPort: 3001
         env:

@@ -2,9 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-// Fake secret for security scanner detection
-const AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE";
-
 const app = express();
 const port = 3001;
 
