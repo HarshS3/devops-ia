@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: review-service
-        image: review-service:latest
+        image: 559007813412.dkr.ecr.us-east-1.amazonaws.com/ecommerce/review-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002
