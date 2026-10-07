@@ -14,24 +14,29 @@ spec:
       containers:
       - name: frontend
         image: 559007813412.dkr.ecr.us-east-1.amazonaws.com/ecommerce/frontend:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 5173
         env:
         - name: VITE_PRODUCT_API_URL
-          value: http://localhost:30001
+          # value: http://localhost:30001
+          value: http://aaa7b4231a0544d22836b2669b88bb09-138090444.us-east-1.elb.amazonaws.com
         - name: VITE_REVIEW_API_URL
-          value: http://localhost:30002
+          # value: http://localhost:30002
+          value: http://a6bc3945a802445c58905eedd8b64b29-129803980.us-east-1.elb.amazonaws.com
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
 spec:
-  type: NodePort
+  type: LoadBalancer
+  # type: NodePort
   ports:
-  - port: 3000
+  - port: 80
     targetPort: 5173
-    nodePort: 30000
+  # - port: 3000
+  #   targetPort: 5173
+  #   nodePort: 30000
   selector:
     app: frontend

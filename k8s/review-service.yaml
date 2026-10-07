@@ -26,10 +26,13 @@ kind: Service
 metadata:
   name: review-service
 spec:
-  type: NodePort
+  type: LoadBalancer
+  # type: NodePort
   ports:
-  - port: 3002
+  - port: 80
     targetPort: 3002
-    nodePort: 30002
+  # - port: 3002
+  #   targetPort: 3002
+  #   nodePort: 30002
   selector:
     app: review-service

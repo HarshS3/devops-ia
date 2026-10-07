@@ -26,10 +26,13 @@ kind: Service
 metadata:
   name: product-service
 spec:
-  type: NodePort
+  type: LoadBalancer
+  # type: NodePort
   ports:
-  - port: 3001
+  - port: 80
     targetPort: 3001
-    nodePort: 30001
+  # - port: 3001
+  #   targetPort: 3001
+  #   nodePort: 30001
   selector:
     app: product-service
