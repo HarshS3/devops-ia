@@ -1,8 +1,21 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const promBundle = require('express-prom-bundle');
 
 const app = express();
+
+// Add Prometheus metrics middleware
+const metricsMiddleware = promBundle({
+  includeMethod: true, 
+  includePath: true, 
+  includeStatusCode: true, 
+  includeUp: true,
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
+app.use(metricsMiddleware);
 const port = 3001;
 
 app.use(cors());
