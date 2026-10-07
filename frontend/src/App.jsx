@@ -88,52 +88,60 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <h1>E-Commerce Catalog</h1>
+    <div className="app-container">
+      <div className="header">
+        <h1>Nexus Store</h1>
+      </div>
 
-      <div className="add-product-form" style={{ padding: '20px', border: '1px solid #ccc', margin: '20px auto', maxWidth: '500px', borderRadius: '8px' }}>
+      <div className="form-card">
         <h3>Add New Product to Database</h3>
-        <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <form onSubmit={handleAddProduct} className="input-group">
           <input required type="text" placeholder="Product Name" value={newProductName} onChange={e => setNewProductName(e.target.value)} />
-          <input required type="number" placeholder="Price" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} />
-          <textarea required placeholder="Description" value={newProductDesc} onChange={e => setNewProductDesc(e.target.value)} />
+          <input required type="number" placeholder="Price ($)" value={newProductPrice} onChange={e => setNewProductPrice(e.target.value)} />
+          <textarea required placeholder="Product Description" rows="3" value={newProductDesc} onChange={e => setNewProductDesc(e.target.value)} />
           <button type="submit">Create Product</button>
         </form>
       </div>
 
-      <div className="products-container">
+      <div className="products-grid">
         {products.map(product => {
           const pId = product._id || product.id;
           return (
-            <div key={pId} className="product-card" style={{ padding: '20px', border: '1px solid #ddd', margin: '20px', borderRadius: '8px', textAlign: 'left' }}>
-              <h2>{product.name} - ${product.price}</h2>
-              <p>{product.description}</p>
+            <div key={pId} className="product-card">
+              <div className="product-header">
+                <h2 className="product-title">{product.name}</h2>
+                <span className="product-price">${product.price}</span>
+              </div>
+              <p className="product-desc">{product.description}</p>
 
-              <hr />
-              <h3>Reviews:</h3>
-              <div className="reviews" style={{ marginBottom: '15px' }}>
+              <div className="reviews-section">
+                <h4>Customer Reviews</h4>
                 {reviews[pId]?.length > 0 ? (
                   reviews[pId].map(review => (
-                    <div key={review.id} style={{ background: '#f9f9f9', padding: '10px', margin: '5px 0', borderRadius: '4px' }}>
-                      <strong>{review.user} ({review.rating}/5):</strong> {review.comment}
+                    <div key={review.id} className="review-item">
+                      <span className="review-author">{review.user}</span>
+                      <span className="review-rating">
+                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                      </span>
+                      <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>{review.comment}</p>
                     </div>
                   ))
                 ) : (
-                  <p style={{ color: '#888' }}>No reviews yet.</p>
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>No reviews yet. Be the first!</p>
                 )}
               </div>
 
-              <form onSubmit={(e) => handleAddReview(e, pId)} style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
+              <form onSubmit={(e) => handleAddReview(e, pId)} className="review-form">
                 <h4>Write a Review</h4>
                 <input required type="text" placeholder="Your Name" value={reviewForms[pId]?.user_name || ''} onChange={e => handleReviewChange(pId, 'user_name', e.target.value)} />
                 <input required type="number" min="1" max="5" placeholder="Rating (1-5)" value={reviewForms[pId]?.rating || ''} onChange={e => handleReviewChange(pId, 'rating', e.target.value)} />
-                <textarea placeholder="Comment" value={reviewForms[pId]?.comment || ''} onChange={e => handleReviewChange(pId, 'comment', e.target.value)} />
-                <button type="submit" style={{ alignSelf: 'flex-start' }}>Submit Review</button>
+                <textarea placeholder="Comment" rows="2" value={reviewForms[pId]?.comment || ''} onChange={e => handleReviewChange(pId, 'comment', e.target.value)} />
+                <button type="submit">Submit Review</button>
               </form>
             </div>
           )
         })}
-        {products.length === 0 && <p>Loading products or database is empty...</p>}
+        {products.length === 0 && <div className="loading-state">Loading products or database is empty...</div>}
       </div>
     </div>
   )
