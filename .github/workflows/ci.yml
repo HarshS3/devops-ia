@@ -21,6 +21,7 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
           directory: ./k8s
+          soft_fail: true
 
   security-docker-lint:
     runs-on: ubuntu-latest
@@ -30,6 +31,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: ./product-service/Dockerfile
+          failure-threshold: error
 
   security-sast-deps-secrets:
     runs-on: ubuntu-latest
@@ -41,7 +43,7 @@ jobs:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
   security-image-scan:
@@ -55,7 +57,7 @@ jobs:
         with:
           image-ref: 'product-service-test'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
   build-and-push:

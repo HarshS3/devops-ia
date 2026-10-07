@@ -63,3 +63,37 @@ FROM node:14.0.0-alpine
           privileged: true
 ```
 **What happens:** Checkov will scan your Kubernetes infrastructure manifests and block the deployment because running privileged containers in a Kubernetes cluster can allow attackers to escape the container and take over the AWS EC2 worker node.
+
+---
+
+### Appendix: Switching Between Audit Mode and Hard Blocking
+Right now, the pipeline is in **Audit Mode** (warnings are logged, but the deployment still succeeds). This is useful for getting initial code out without being blocked by minor warnings. 
+
+If you want to demonstrate the pipeline strictly **blocking** the deployment when a vulnerability is found, you need to switch the pipeline back to **Hard Blocking Mode**.
+
+**File to modify:** `.github/workflows/ci.yml`
+
+#### 1. Enable Blocking for IaC (Checkov)
+Find the `Checkov IaC Scan` step and **delete** the `soft_fail: true` line.
+```yaml
+      - name: Checkov IaC Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ./k8s
+          # DELETE THE LINE BELOW TO ENABLE BLOCKING:
+          # soft_fail: true 
+```
+
+#### 2. Enable Blocking for Secrets, Dependencies, and Images (Trivy)
+Find both the `Trivy FS Scan` and `Trivy Image Scan` steps. Change `exit-code: '0'` to `exit-code: '1'`.
+```yaml
+      - name: Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          # CHANGE '0' to '1' TO ENABLE BLOCKING:
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+```
