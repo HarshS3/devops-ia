@@ -12,20 +12,36 @@ module "eks" {
   eks_managed_node_groups = {
     general_v2 = {
       min_size     = 1
-      max_size     = 3
-      desired_size = 3
+      max_size     = 4
+      desired_size = 4
 
       instance_types       = ["t3.micro"]
       capacity_type        = "ON_DEMAND"
       ami_type             = "AL2_x86_64"
-      bootstrap_extra_args = "--use-max-pods false --kubelet-extra-args '--max-pods=11'"
+      
+      # This runs automatically when nodes boot to fix the 4-pod limit!
+      post_bootstrap_user_data = <<-EOT
+        sed -i 's/"maxPods": 4/"maxPods": 11/' /etc/kubernetes/kubelet/kubelet-config.json
+        systemctl restart kubelet
+      EOT
+
       iam_role_additional_policies = {
         ebs_csi = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+        ssm     = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       }
     }
   }
 
   cluster_addons = {
+    vpc-cni = {
+      most_recent = true
+      configuration_values = jsonencode({
+        env = {
+          ENABLE_PREFIX_DELEGATION = "true"
+          WARM_PREFIX_TARGET       = "1"
+        }
+      })
+    }
     aws-ebs-csi-driver = {
       most_recent = true
     }

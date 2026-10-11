@@ -1,0 +1,6 @@
+{
+  "commands": [
+    "sed -i 's/\"maxPods\": 4/\"maxPods\": 11/' /etc/kubernetes/kubelet/kubelet-config.json",
+    "systemctl restart kubelet"
+  ]
+}
