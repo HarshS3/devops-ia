@@ -60,9 +60,34 @@ jobs:
           exit-code: '0'
           severity: 'CRITICAL,HIGH'
 
-  build-and-push:
+  provision-infra:
     needs: [security-iac-scan, security-docker-lint, security-sast-deps-secrets, security-image-scan]
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init and Apply
+        run: |
+          cd terraform
+          terraform init
+          terraform apply -auto-approve
+
+  build-and-push:
+    needs: [provision-infra]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     permissions:
       contents: read
 
@@ -106,7 +131,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/ecommerce/frontend:latest
 
   deploy:
-    needs: build-and-push
+    needs: [build-and-push]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
@@ -119,15 +144,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-        
-      - name: Terraform Init and Apply
-        run: |
-          cd terraform
-          terraform init
-          terraform apply -auto-approve
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ecommerce-cluster
