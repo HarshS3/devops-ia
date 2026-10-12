@@ -1,6 +1,5 @@
 {
   "commands": [
-    "sed -i 's/\"maxPods\": 4/\"maxPods\": 11/' /etc/kubernetes/kubelet/kubelet-config.json",
-    "systemctl restart kubelet"
+    "tail -n 25 /var/log/aws-routed-eni/ipamd.log"
   ]
 }
