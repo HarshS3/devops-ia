@@ -17,13 +17,13 @@ If your `terraform destroy` is already failing, you must manually delete the orp
 
 1. **Delete Orphaned ELBs:**
    ```bash
-   aws elb describe-load-balancers --region us-east-1
-   aws elb delete-load-balancer --load-balancer-name <name-from-above> --region us-east-1
+   aws elb describe-load-balancers --region ap-southeast-2
+   aws elb delete-load-balancer --load-balancer-name <name-from-above> --region ap-southeast-2
    ```
 2. **Delete Orphaned Security Groups:**
    ```bash
-   aws ec2 describe-security-groups --region us-east-1 --filters "Name=group-name,Values=k8s-elb*"
-   aws ec2 delete-security-group --group-id <sg-id-from-above> --region us-east-1
+   aws ec2 describe-security-groups --region ap-southeast-2 --filters "Name=group-name,Values=k8s-elb*"
+   aws ec2 delete-security-group --group-id <sg-id-from-above> --region ap-southeast-2
    ```
 3. **Resume Terraform:**
    ```bash
