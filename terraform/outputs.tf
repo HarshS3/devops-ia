@@ -10,5 +10,5 @@ output "cluster_endpoint" {
 
 output "update_kubeconfig_command" {
   description = "Command to run on your laptop to connect to this cluster"
-  value       = "aws eks update-kubeconfig --region us-east-1 --name ${module.eks.cluster_name}"
+  value       = "aws eks update-kubeconfig --region ap-southeast-2 --name ${module.eks.cluster_name}"
 }

@@ -2,9 +2,9 @@ terraform {
   required_version = ">= 1.0.0"
   
   backend "s3" {
-    bucket         = "ecommerce-devops-tfstate-559007813412"
+    bucket         = "ecommerce-devops-tfstate-520646131385"
     key            = "ecommerce/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "ap-southeast-2"
     dynamodb_table = "ecommerce-devops-tf-lock"
     encrypt        = true
   }
@@ -18,5 +18,5 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-southeast-2"
 }

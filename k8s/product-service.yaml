@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: 559007813412.dkr.ecr.us-east-1.amazonaws.com/ecommerce/product-service:latest
+        image: 520646131385.dkr.ecr.ap-southeast-2.amazonaws.com/ecommerce/product-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001

@@ -9,8 +9,8 @@ on:
       - master
 
 env:
-  REGISTRY: 559007813412.dkr.ecr.us-east-1.amazonaws.com
-  AWS_REGION: us-east-1
+  REGISTRY: 520646131385.dkr.ecr.ap-southeast-2.amazonaws.com
+  AWS_REGION: ap-southeast-2
 
 jobs:
   security-iac-scan:

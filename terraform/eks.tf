@@ -56,7 +56,7 @@ module "eks" {
   access_entries = {
     terraform_user = {
       kubernetes_groups = []
-      principal_arn     = "arn:aws:iam::559007813412:user/terraform"
+      principal_arn     = "arn:aws:iam::520646131385:user/terraform"
       policy_associations = {
         admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
