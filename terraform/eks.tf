@@ -13,8 +13,8 @@ module "eks" {
   eks_managed_node_groups = {
     general_v2 = {
       min_size     = 1
-      max_size     = 4
-      desired_size = 4
+      max_size     = 6
+      desired_size = 6
 
       instance_types       = ["t3.micro"]
       capacity_type        = "ON_DEMAND"
