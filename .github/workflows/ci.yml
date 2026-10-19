@@ -154,3 +154,6 @@ jobs:
           kubectl apply -f ./k8s/
           # Force a restart to pull the freshly built 'latest' images
           kubectl rollout restart deployment frontend product-service review-service
+          # Check status and print cluster resources
+          kubectl get pods -o wide
+          kubectl get svc

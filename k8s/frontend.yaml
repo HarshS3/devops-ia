@@ -19,11 +19,9 @@ spec:
         - containerPort: 5173
         env:
         - name: VITE_PRODUCT_API_URL
-          # value: http://localhost:30001
-          value: http://aaa7b4231a0544d22836b2669b88bb09-138090444.us-east-1.elb.amazonaws.com
+          value: http://a566e527101d34e1abcabfb5ad682582-263976215.ap-southeast-2.elb.amazonaws.com
         - name: VITE_REVIEW_API_URL
-          # value: http://localhost:30002
-          value: http://a6bc3945a802445c58905eedd8b64b29-129803980.us-east-1.elb.amazonaws.com
+          value: http://ac0baad498e82419985a3c95cfcf7e0e-1013665987.ap-southeast-2.elb.amazonaws.com
 ---
 apiVersion: v1
 kind: Service

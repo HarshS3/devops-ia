@@ -1,5 +1,5 @@
 aws ssm send-command `
-  --instance-ids i-0204bd7146fa2f87b i-0374b6260b49bb71b i-00eef9f5acaf0db06 i-08a774ebed11088c2 `
+  --instance-ids i-0823af54e3388e587 i-08feaf129765720b2 i-0b330ecb8b2edc715 i-0d37b803b28d4e860 `
   --document-name "AWS-RunShellScript" `
-  --parameters '{"commands":["sed -i ''s/\"maxPods\": 4/\"maxPods\": 11/'' /etc/kubernetes/kubelet/kubelet-config.json", "systemctl restart kubelet"]}' `
-  --region us-east-1
+  --parameters '{"commands":["sed -i ''s/--max-pods=4/--max-pods=11/g'' /etc/systemd/system/kubelet.service.d/30-kubelet-extra-args.conf", "systemctl daemon-reload", "systemctl restart kubelet"]}' `
+  --region ap-southeast-2
