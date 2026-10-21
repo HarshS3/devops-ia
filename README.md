@@ -19,3 +19,6 @@ cd terraform
 terraform destroy --auto-approve
 ```
 Because your local terminal is connected to the S3 bucket, it will safely read the remote state and destroy the resources.
+
+## Last Deployed
+Infrastructure re-provisioned: 2026-10-21
