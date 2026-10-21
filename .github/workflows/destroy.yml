@@ -1,0 +1,94 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - destroy
+
+env:
+  AWS_REGION: ap-southeast-2
+
+jobs:
+  destroy-all:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[destroy]') || github.ref == 'refs/heads/destroy'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Connect to EKS & Clean Up Kubernetes Resources (ELBs & PVCs)
+        run: |
+          echo "Attempting to connect to EKS cluster..."
+          if aws eks describe-cluster --name ecommerce-cluster --region ${{ env.AWS_REGION }} >/dev/null 2>&1; then
+            echo "EKS cluster is reachable. Updating kubeconfig..."
+            aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ecommerce-cluster
+            
+            echo "Deleting all Kubernetes services to remove LoadBalancers (ELBs)..."
+            kubectl delete svc --all --all-namespaces --timeout=120s || true
+            
+            echo "Deleting all deployments and pods..."
+            kubectl delete deployment --all --all-namespaces --timeout=120s || true
+            
+            echo "Deleting PVCs to unbind EBS volumes..."
+            kubectl delete pvc --all --all-namespaces --timeout=120s || true
+            
+            echo "Waiting 45 seconds for AWS ELBs and ENIs to deprovision..."
+            sleep 45
+          else
+            echo "EKS cluster does not exist or is already deleted. Proceeding to Terraform destroy."
+          fi
+
+      - name: Clean Up Orphaned Classic Load Balancers
+        run: |
+          echo "Checking for any lingering Load Balancers..."
+          ELBS=$(aws elb describe-load-balancers --region ${{ env.AWS_REGION }} --query "LoadBalancerDescriptions[].LoadBalancerName" --output text 2>/dev/null || true)
+          for elb in $ELBS; do
+            if [ -n "$elb" ]; then
+              echo "Deleting ELB: $elb"
+              aws elb delete-load-balancer --load-balancer-name "$elb" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+      - name: Terraform Destroy
+        run: |
+          cd terraform
+          terraform init
+          terraform destroy -auto-approve
+
+      - name: Final Cost Audit (Verify Zero Billable Resources)
+        run: |
+          echo "=== AUDIT OF BILLABLE AWS RESOURCES in ${{ env.AWS_REGION }} ==="
+          
+          echo "--- EC2 Instances ---"
+          aws ec2 describe-instances --region ${{ env.AWS_REGION }} \
+            --filters "Name=instance-state-name,Values=running,pending" \
+            --query "Reservations[].Instances[].{ID:InstanceId,Type:InstanceType,State:State.Name}" \
+            --output table
+
+          echo "--- NAT Gateways ---"
+          aws ec2 describe-nat-gateways --region ${{ env.AWS_REGION }} \
+            --filter "Name=state,Values=available,pending" \
+            --query "NatGateways[].{ID:NatGatewayId,State:State}" \
+            --output table
+
+          echo "--- EKS Clusters ---"
+          aws eks list-clusters --region ${{ env.AWS_REGION }} --output table
+
+          echo "--- Elastic Load Balancers ---"
+          aws elb describe-load-balancers --region ${{ env.AWS_REGION }} \
+            --query "LoadBalancerDescriptions[].LoadBalancerName" \
+            --output table
+
+          echo "Teardown completed. Check tables above to confirm zero active billable resources."
