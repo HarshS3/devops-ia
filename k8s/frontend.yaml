@@ -19,9 +19,9 @@ spec:
         - containerPort: 5173
         env:
         - name: VITE_PRODUCT_API_URL
-          value: http://ac0baad498e82419985a3c95cfcf7e0e-1013665987.ap-southeast-2.elb.amazonaws.com
+          value: http://ad14121774ec44fa2a4248488671dd76-913497995.ap-southeast-2.elb.amazonaws.com
         - name: VITE_REVIEW_API_URL
-          value: http://a566e527101d34e1abcabfb5ad682582-263976215.ap-southeast-2.elb.amazonaws.com
+          value: http://ad73e1b60f96e4dc6a3234b04afb244c-501385821.ap-southeast-2.elb.amazonaws.com
 ---
 apiVersion: v1
 kind: Service
