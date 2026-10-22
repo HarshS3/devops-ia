@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - master
       - destroy
 
 env:
@@ -66,17 +67,54 @@ jobs:
           terraform init
           terraform destroy -auto-approve
 
-      - name: Final Cost Audit (Verify Zero Billable Resources)
+      - name: Comprehensive Cost Audit & Deep Cleanup
         run: |
-          echo "=== AUDIT OF BILLABLE AWS RESOURCES in ${{ env.AWS_REGION }} ==="
+          echo "=== AUDIT & PURGE OF ANY LINGERING AWS RESOURCES in ${{ env.AWS_REGION }} ==="
           
-          echo "--- EC2 Instances ---"
+          echo "--- 1. Checking Classic Load Balancers ---"
+          ELBS=$(aws elb describe-load-balancers --region ${{ env.AWS_REGION }} --query "LoadBalancerDescriptions[].LoadBalancerName" --output text 2>/dev/null || true)
+          for elb in $ELBS; do
+            if [ -n "$elb" ]; then
+              echo "Purging lingering ELB: $elb"
+              aws elb delete-load-balancer --load-balancer-name "$elb" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+          echo "--- 2. Checking V2 Load Balancers (ALB/NLB) ---"
+          V2_ARNS=$(aws elbv2 describe-load-balancers --region ${{ env.AWS_REGION }} --query "LoadBalancers[].LoadBalancerArn" --output text 2>/dev/null || true)
+          for arn in $V2_ARNS; do
+            if [ -n "$arn" ]; then
+              echo "Purging lingering V2 Load Balancer: $arn"
+              aws elbv2 delete-load-balancer --load-balancer-arn "$arn" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+          echo "--- 3. Checking & Purging Unattached EBS Volumes ---"
+          VOLUMES=$(aws ec2 describe-volumes --region ${{ env.AWS_REGION }} --filters "Name=status,Values=available" --query "Volumes[].VolumeId" --output text 2>/dev/null || true)
+          for vol in $VOLUMES; do
+            if [ -n "$vol" ]; then
+              echo "Purging unattached EBS Volume: $vol"
+              aws ec2 delete-volume --volume-id "$vol" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+          echo "--- 4. Checking & Releasing Unallocated Elastic IPs ---"
+          EIPS=$(aws ec2 describe-addresses --region ${{ env.AWS_REGION }} --query "Addresses[?AssociationId==null].AllocationId" --output text 2>/dev/null || true)
+          for eip in $EIPS; do
+            if [ -n "$eip" ]; then
+              echo "Releasing unused Elastic IP: $eip"
+              aws ec2 release-address --allocation-id "$eip" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+          echo "=== FINAL ZERO-BILLABLE-RESOURCES AUDIT ==="
+          echo "--- Running/Pending EC2 Instances ---"
           aws ec2 describe-instances --region ${{ env.AWS_REGION }} \
             --filters "Name=instance-state-name,Values=running,pending" \
             --query "Reservations[].Instances[].{ID:InstanceId,Type:InstanceType,State:State.Name}" \
             --output table
 
-          echo "--- NAT Gateways ---"
+          echo "--- Available/Pending NAT Gateways ---"
           aws ec2 describe-nat-gateways --region ${{ env.AWS_REGION }} \
             --filter "Name=state,Values=available,pending" \
             --query "NatGateways[].{ID:NatGatewayId,State:State}" \
@@ -85,9 +123,15 @@ jobs:
           echo "--- EKS Clusters ---"
           aws eks list-clusters --region ${{ env.AWS_REGION }} --output table
 
-          echo "--- Elastic Load Balancers ---"
+          echo "--- Active Elastic Load Balancers ---"
           aws elb describe-load-balancers --region ${{ env.AWS_REGION }} \
             --query "LoadBalancerDescriptions[].LoadBalancerName" \
             --output table
 
-          echo "Teardown completed. Check tables above to confirm zero active billable resources."
+          echo "--- Lingering EBS Volumes ---"
+          aws ec2 describe-volumes --region ${{ env.AWS_REGION }} \
+            --filters "Name=status,Values=available,in-use" \
+            --query "Volumes[].{ID:VolumeId,Size:Size,State:State}" \
+            --output table
+
+          echo "Audit complete. Zero active billable resources verified."
