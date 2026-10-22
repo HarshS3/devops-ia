@@ -22,8 +22,9 @@ module "eks" {
       
       # This runs automatically when nodes boot to fix the 4-pod limit!
       post_bootstrap_user_data = <<-EOT
-        sed -i 's/--max-pods=4/--max-pods=11/g' /etc/systemd/system/kubelet.service.d/30-kubelet-extra-args.conf
-        systemctl daemon-reload
+        sed -i 's/"maxPods": 4/"maxPods": 11/' /etc/kubernetes/kubelet/kubelet-config.json 2>/dev/null || true
+        sed -i 's/--max-pods=4/--max-pods=11/g' /etc/systemd/system/kubelet.service.d/30-kubelet-extra-args.conf 2>/dev/null || true
+        systemctl daemon-reload 2>/dev/null || true
         systemctl restart kubelet
       EOT
 

@@ -150,10 +150,31 @@ jobs:
 
       - name: Deploy to Amazon EKS
         run: |
-          # Apply the latest manifests to the AWS cluster
+          # 1. Dynamically find all running worker nodes and unlock max-pods from 4 to 11 via AWS SSM
+          INSTANCE_IDS=$(aws ec2 describe-instances --region ${{ env.AWS_REGION }} \
+            --filters "Name=tag:eks:cluster-name,Values=ecommerce-cluster" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[].InstanceId" --output text 2>/dev/null || true)
+          
+          if [ -n "$INSTANCE_IDS" ]; then
+            echo "Unlocking max-pods to 11 on EC2 worker nodes: $INSTANCE_IDS"
+            aws ssm send-command \
+              --instance-ids $INSTANCE_IDS \
+              --document-name "AWS-RunShellScript" \
+              --parameters '{"commands":["sed -i '\''s/\"maxPods\": 4/\"maxPods\": 11/'\'' /etc/kubernetes/kubelet/kubelet-config.json 2>/dev/null || true", "sed -i '\''s/--max-pods=4/--max-pods=11/g'\'' /etc/systemd/system/kubelet.service.d/30-kubelet-extra-args.conf 2>/dev/null || true", "systemctl daemon-reload", "systemctl restart kubelet"]}' \
+              --region ${{ env.AWS_REGION }} || true
+            echo "Waiting 15 seconds for kubelet restart..."
+            sleep 15
+          fi
+
+          # 2. Apply the latest manifests to the AWS cluster
           kubectl apply -f ./k8s/
-          # Force a restart to pull the freshly built 'latest' images
+
+          # 3. Force a restart to pull the freshly built 'latest' images
           kubectl rollout restart deployment frontend product-service review-service
-          # Check status and print cluster resources
+
+          # 4. Wait for rollouts and print cluster status
+          kubectl rollout status deployment frontend --timeout=60s || true
+          kubectl rollout status deployment product-service --timeout=60s || true
+          kubectl rollout status deployment review-service --timeout=60s || true
           kubectl get pods -o wide
           kubectl get svc
