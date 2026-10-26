@@ -65,7 +65,11 @@ jobs:
         run: |
           cd terraform
           terraform init
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve || {
+            echo "Terraform destroy encountered an error (e.g. transient dependency). Waiting 30s and retrying..."
+            sleep 30
+            terraform destroy -auto-approve
+          }
 
       - name: Comprehensive Cost Audit & Deep Cleanup
         run: |
@@ -104,6 +108,18 @@ jobs:
             if [ -n "$eip" ]; then
               echo "Releasing unused Elastic IP: $eip"
               aws ec2 release-address --allocation-id "$eip" --region ${{ env.AWS_REGION }} || true
+            fi
+          done
+
+          echo "--- 5. Checking & Purging EKS CloudWatch Log Groups ---"
+          aws logs delete-log-group --log-group-name "/aws/eks/ecommerce-cluster/cluster" --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+          echo "--- 6. Checking & Deleting Orphaned ELB Security Groups ---"
+          SGS=$(aws ec2 describe-security-groups --region ${{ env.AWS_REGION }} --filters "Name=group-name,Values=k8s-elb*" --query "SecurityGroups[].GroupId" --output text 2>/dev/null || true)
+          for sg in $SGS; do
+            if [ -n "$sg" ]; then
+              echo "Deleting orphaned ELB Security Group: $sg"
+              aws ec2 delete-security-group --group-id "$sg" --region ${{ env.AWS_REGION }} || true
             fi
           done
 
